@@ -1,0 +1,12 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+__pycache__/
+*.pyc
+.env
+chroma_db/
+data/
+metrics/
+.pytest_cache/
