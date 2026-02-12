@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import sqlite3, json, os
+import sqlite3, os, argparse
 from config import get_openai_client, MODEL_NAME, count_tokens, compute_cost, Timer
 
-MAX_HISTORY = 10
+MAX_HISTORY = 10  # default, overridden by --history arg
 DB_PATH = os.path.join(os.path.dirname(__file__), "chat_history.db")
 
 # ── SQLite history store ────────────────────────────────────────────────────
@@ -22,13 +22,13 @@ def _get_last_n(conn, n: int) -> list[dict]:
 
 # ── Chat loop ───────────────────────────────────────────────────────────────
 
-def chat_loop():
+def chat_loop(max_history: int = MAX_HISTORY):
     client = get_openai_client()
     conn = _init_db()
-    existing = _get_last_n(conn, MAX_HISTORY)
+    existing = _get_last_n(conn, max_history)
     if existing:
         print(f"(Restored {len(existing)} messages from previous session)")
-    print("Chat with GPT-4o (type 'quit' to exit)\n")
+    print(f"Chat with GPT-4o — history={max_history} (type 'quit' to exit)\n")
 
     while True:
         try:
@@ -41,7 +41,7 @@ def chat_loop():
             continue
 
         _add_message(conn, "user", user_input)
-        history = _get_last_n(conn, MAX_HISTORY)
+        history = _get_last_n(conn, max_history)
         messages = [{"role": "system", "content": "You are a helpful assistant."}] + history
 
         prompt_tokens = count_tokens(" ".join(m["content"] for m in messages))
@@ -64,4 +64,7 @@ def chat_loop():
     conn.close()
 
 if __name__ == "__main__":
-    chat_loop()
+    parser = argparse.ArgumentParser(description="Streaming chat with GPT-4o")
+    parser.add_argument("--history", type=int, default=MAX_HISTORY, help=f"Number of messages to persist (default: {MAX_HISTORY})")
+    args = parser.parse_args()
+    chat_loop(max_history=args.history)
