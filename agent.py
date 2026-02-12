@@ -105,12 +105,77 @@ def run_agent(user_prompt: str) -> dict:
                 itinerary = json.loads(content[content.find("{"):content.rfind("}")+1])
             except (json.JSONDecodeError, ValueError):
                 itinerary = {"raw_response": content}
-            print(json.dumps(itinerary, indent=2))
+
+            # Pretty-print the itinerary
+            _print_itinerary(itinerary)
+
             print(f"\n{'─'*60}\nScratchpad:")
             for e in scratchpad: print(e)
             return itinerary
 
     return {"error": "Max iterations reached", "scratchpad": scratchpad}
+
+
+def _print_itinerary(it: dict):
+    if "raw_response" in it:
+        print(it["raw_response"]); return
+
+    dest = it.get("destination", "?")
+    budget = it.get("total_budget_nzd", "?")
+    cost = it.get("total_estimated_cost_nzd", "?")
+    print(f"   Destination: {dest}")
+    print(f"   Budget: NZ${budget}  |  Estimated cost: NZ${cost}\n")
+
+    # Flights
+    flights = it.get("flights", {})
+    if flights:
+        print("   Flights:")
+        if isinstance(flights, dict):
+            for leg, info in flights.items():
+                if isinstance(info, dict):
+                    print(f"    {leg.title():10s}  {info.get('airline','')} {info.get('flight','')}  "
+                          f"{info.get('departure','')}-{info.get('arrival','')}  NZ${info.get('price_nzd','')}")
+        elif isinstance(flights, list):
+            for info in flights:
+                if isinstance(info, dict):
+                    label = info.get("type", info.get("leg", ""))
+                    print(f"    {label.title():10s}  {info.get('airline','')} {info.get('flight','')}  "
+                          f"{info.get('departure','')}-{info.get('arrival','')}  NZ${info.get('price_nzd','')}")
+        print()
+
+    # Accommodation
+    acc = it.get("accommodation", {})
+    if acc:
+        print(f"   Accommodation: {acc.get('name','')} ({acc.get('type','')}) — "
+              f"NZ${acc.get('price_per_night_nzd','')}/night, total NZ${acc.get('total_cost_nzd', '')}\n")
+
+    # Days
+    for day in it.get("days", []):
+        weather = day.get("weather", {})
+        w_str = f"{weather.get('condition','')} {weather.get('high_c','')}°C" if weather else ""
+        print(f"   Day {day.get('day','')} — {day.get('date','')}  ({w_str})")
+        for act in day.get("activities", []):
+            if isinstance(act, str):
+                print(f"    * {act}")
+                continue
+            name = act.get("name", act.get("activity", ""))
+            price = act.get("price_nzd", act.get("cost_nzd", 0))
+            dur = act.get("duration_hrs", "")
+            dur_str = f" ({dur}h)" if dur else ""
+            print(f"    • {name}{dur_str} — NZ${price}")
+        print()
+
+    # Budget breakdown
+    bb = it.get("budget_breakdown", {})
+    if bb:
+        print("   Budget Breakdown:")
+        for k, v in bb.items():
+            print(f"    {k.replace('_',' ').title():20s} NZ${v}")
+    print()
+
+    # Also output raw JSON for programmatic use
+    print(f"{'─'*60}\nRaw JSON:")
+    print(json.dumps(it, indent=2))
 
 if __name__ == "__main__":
     prompt = " ".join(sys.argv[1:]) or "Plan a 2-day trip to Auckland for under NZ$500. Departing from Wellington on the 15th of next month."
