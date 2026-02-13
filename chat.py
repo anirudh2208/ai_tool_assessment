@@ -28,7 +28,7 @@ def chat_loop(max_history: int = MAX_HISTORY):
     existing = _get_last_n(conn, max_history)
     if existing:
         print(f"(Restored {len(existing)} messages from previous session)")
-    print(f"Chat with GPT-4o — history={max_history} (type 'quit' to exit)\n")
+    print(f"Chat with Assistant — history={max_history} (type 'quit' to exit)\n")
 
     while True:
         try:
