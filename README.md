@@ -1,4 +1,4 @@
-# AI Platform Assessment
+# AI Tool Assessment
 
 ## Architecture
 ```
