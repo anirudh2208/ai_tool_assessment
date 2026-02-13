@@ -1,0 +1,57 @@
+services:
+  #  Vector DB (standalone Chroma server) 
+  chromadb:
+    image: chromadb/chroma:latest
+    ports: ["8000:8000"]
+    volumes: [chroma_data:/chroma/chroma]
+    restart: unless-stopped
+
+  #  API service (RAG query + Agent endpoints) 
+  api:
+    build: .
+    command: sh -c "sleep 5 && uvicorn api:app --host 0.0.0.0 --port 8080"
+    env_file: .env
+    environment:
+      CHROMA_HOST: chromadb
+    ports: ["8080:8080"]
+    depends_on: [chromadb]
+    restart: on-failure
+
+  #  App UI (Streamlit dashboard) 
+  dashboard:
+    build: .
+    command: sh -c "sleep 5 && streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0"
+    env_file: .env
+    environment:
+      CHROMA_HOST: chromadb
+    ports: ["8501:8501"]
+    depends_on: [chromadb]
+    restart: on-failure
+
+  #  One-off tasks (run with: docker compose run <service>) 
+  rag-ingest:
+    build: .
+    command: sh -c "sleep 5 && python rag.py ingest"
+    env_file: .env
+    environment:
+      CHROMA_HOST: chromadb
+    volumes: [rag_data:/app/data]
+    depends_on: [chromadb]
+
+  run-all:
+    build: .
+    command: sh -c "sleep 5 && python run_all.py"
+    env_file: .env
+    environment:
+      CHROMA_HOST: chromadb
+    volumes: [rag_data:/app/data]
+    depends_on: [chromadb]
+
+  tests:
+    build: .
+    command: pytest -q tests/
+    env_file: .env
+
+volumes:
+  chroma_data:
+  rag_data:
