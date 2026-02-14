@@ -44,8 +44,9 @@ docker compose build --no-cache
 # Start all long-running services (vector DB + API + dashboard)
 docker compose up chromadb api dashboard
 
-# In another terminal — ingest documents, then run all tasks:
+# In another terminal — ingest documents
 docker compose run rag-ingest
+# or to run every thing including ingest
 docker compose run run-all
 
 # Or individually:
