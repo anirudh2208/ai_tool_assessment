@@ -63,7 +63,7 @@ docker compose run tests
 
 ### API Endpoints
 - `POST /rag/query`  — `{"question": "Who is Frodo?", "top_k": 5}`
-- `POST /agent/plan` — `{"prompt": "Plan a 2-day trip to Auckland for under NZ$500"}`
+- `POST /agent/plan` — `{"prompt": "Plan a 2-day trip to Auckland for under 500"}`
 - `GET  /health`
 
 ## Notes
