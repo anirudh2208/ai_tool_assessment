@@ -87,7 +87,13 @@ def run_agent(user_prompt: str) -> dict:
         print(f"  [latency: {t.elapsed_ms:.0f} ms]")
 
         if msg.tool_calls:
-            messages.append(msg)
+            # Convert SDK object to plain dict to avoid pydantic version conflicts
+            messages.append({
+                "role": "assistant",
+                "tool_calls": [{"id": tc.id, "type": "function",
+                                "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                               for tc in msg.tool_calls]
+            })
             for tc in msg.tool_calls:
                 fn_name, fn_args = tc.function.name, json.loads(tc.function.arguments)
                 log = f" {fn_name}({json.dumps(fn_args)})"
